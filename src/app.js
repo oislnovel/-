@@ -10,7 +10,7 @@ const elements = {
 let voices = [];
 
 function setStatus(message) {
-  elements.status.textContent = message;
+  if (elements.status) elements.status.textContent = message;
 }
 
 function updateCharCount() {
@@ -70,15 +70,16 @@ function readText() {
     return;
   }
 
-  if (!('speechSynthesis' in window)) {
+  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
     setStatus('このブラウザは音声合成に対応していません');
     return;
   }
 
   speechSynthesis.cancel();
+  const voice = selectedVoice();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.voice = selectedVoice();
-  utterance.lang = selectedVoice()?.lang || 'ja-JP';
+  utterance.voice = voice;
+  utterance.lang = voice?.lang || 'ja-JP';
   utterance.onstart = () => setStatus('読み上げ中');
   utterance.onend = () => setStatus('読み上げ完了');
   utterance.onerror = () => setStatus('読み上げでエラーが発生しました');
@@ -86,6 +87,12 @@ function readText() {
 }
 
 function init() {
+  const missingElement = Object.values(elements).some((element) => element === null);
+  if (missingElement) {
+    console.error('Mimi Reader: 必要なHTML要素が見つかりません。');
+    return;
+  }
+
   updateCharCount();
   populateVoices();
   elements.textInput.addEventListener('input', updateCharCount);
@@ -93,7 +100,11 @@ function init() {
   elements.stopButton.addEventListener('click', stopReading);
 
   if ('speechSynthesis' in window) {
-    speechSynthesis.addEventListener('voiceschanged', populateVoices);
+    if (typeof speechSynthesis.addEventListener === 'function') {
+      speechSynthesis.addEventListener('voiceschanged', populateVoices);
+    } else {
+      speechSynthesis.onvoiceschanged = populateVoices;
+    }
   }
 }
 
