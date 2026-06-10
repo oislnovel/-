@@ -65,7 +65,7 @@ button.ghost {
 .app-shell {
   width: min(1120px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 3rem 0;
+  padding: 1rem 0 3rem;
   display: grid;
   gap: 1.25rem;
 }
@@ -79,7 +79,12 @@ button.ghost {
 }
 
 .hero {
-  padding: clamp(1.5rem, 4vw, 3rem);
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.source-panel {
+  border-color: rgba(125, 211, 252, 0.7);
+  box-shadow: 0 24px 90px rgba(56, 189, 248, 0.16);
 }
 
 .eyebrow {
@@ -99,7 +104,7 @@ p {
 
 h1 {
   margin-bottom: 0.75rem;
-  font-size: clamp(2.4rem, 7vw, 5rem);
+  font-size: clamp(2rem, 5vw, 3.5rem);
   line-height: 0.95;
 }
 
@@ -181,7 +186,7 @@ textarea:focus {
 
 textarea {
   width: 100%;
-  min-height: 22rem;
+  min-height: clamp(16rem, 42vh, 24rem);
   margin-top: 0.65rem;
   border: 2px solid rgba(125, 211, 252, 0.72);
   border-radius: 1rem;

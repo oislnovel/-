@@ -12,22 +12,11 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="hero" aria-labelledby="app-title">
-        <p class="eyebrow">Browser Text-to-Speech</p>
-        <h1 id="app-title">Mimi Reader</h1>
-        <p class="lead">
-          Kindle本やカクヨム作品など、あなたが正当に利用できる本文を貼り付けて、PCの既定の音声出力（イヤホン）から聞けます。
-        </p>
-        <div class="notice" role="note">
-          DRM解除やサイトの自動取得は行いません。本文はブラウザ内だけで処理され、サーバーへ送信しません。
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="source-title">
+      <section class="panel source-panel" aria-labelledby="source-title">
         <div class="panel-heading">
           <div>
-            <h2 id="source-title">本文を用意</h2>
-            <p><strong>はい、貼り付ける場所はこの下です。</strong> 本文をコピーしたら、矢印の下にある大きな入力欄をクリックして <kbd>Ctrl</kbd> + <kbd>V</kbd> で貼り付けてください。</p>
+            <h2 id="source-title">貼り付け入力欄</h2>
+            <p><strong>この画面の最初に入力欄を出しました。</strong> 下の大きな枠をクリックして <kbd>Ctrl</kbd> + <kbd>V</kbd> で貼り付けてください。</p>
           </div>
           <label class="file-button">
             TXT/HTMLを開く
@@ -51,6 +40,17 @@
           <button id="sampleButton" type="button">サンプルを入れる</button>
           <button id="clearButton" type="button" class="ghost">消去</button>
           <span id="charCount" aria-live="polite">0文字</span>
+        </div>
+      </section>
+
+      <section class="hero" aria-labelledby="app-title">
+        <p class="eyebrow">Browser Text-to-Speech</p>
+        <h1 id="app-title">Mimi Reader</h1>
+        <p class="lead">
+          Kindle本やカクヨム作品など、あなたが正当に利用できる本文を貼り付けて、PCの既定の音声出力（イヤホン）から聞けます。
+        </p>
+        <div class="notice" role="note">
+          DRM解除やサイトの自動取得は行いません。本文はブラウザ内だけで処理され、サーバーへ送信しません。
         </div>
       </section>
 
