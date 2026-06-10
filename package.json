@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/smoke.test.js && node tests/app-structure.test.js && node tests/app-runtime.test.js",
+    "test": "node tests/smoke.test.js && node tests/app-structure.test.js && node tests/app-runtime.test.js && node tests/no-conflict-markers.test.js",
     "start": "python3 -m http.server 4173"
   },
   "keywords": [
