@@ -3,45 +3,26 @@ import { splitIntoSpeechChunks } from './speech.js';
 const SAMPLE_TEXT = `吾輩は猫である。名前はまだ無い。\n\nこのアプリは、ブラウザの音声合成を使って日本語の文章を読み上げます。PCの音声出力をイヤホンに設定してから再生してください。`;
 const STORAGE_KEY = 'mimi-reader-state-v1';
 
-const REQUIRED_SELECTORS = {
-  textInput: '#textInput',
-  fileInput: '#fileInput',
-  sampleButton: '#sampleButton',
-  clearButton: '#clearButton',
-  charCount: '#charCount',
-  voiceSelect: '#voiceSelect',
-  rate: '#rate',
-  pitch: '#pitch',
-  volume: '#volume',
-  rateValue: '#rateValue',
-  pitchValue: '#pitchValue',
-  volumeValue: '#volumeValue',
-  playButton: '#playButton',
-  pauseButton: '#pauseButton',
-  stopButton: '#stopButton',
-  progress: '#progress',
-  progressText: '#progressText',
-  status: '#status',
+const elements = {
+  textInput: document.querySelector('#textInput'),
+  fileInput: document.querySelector('#fileInput'),
+  sampleButton: document.querySelector('#sampleButton'),
+  clearButton: document.querySelector('#clearButton'),
+  charCount: document.querySelector('#charCount'),
+  voiceSelect: document.querySelector('#voiceSelect'),
+  rate: document.querySelector('#rate'),
+  pitch: document.querySelector('#pitch'),
+  volume: document.querySelector('#volume'),
+  rateValue: document.querySelector('#rateValue'),
+  pitchValue: document.querySelector('#pitchValue'),
+  volumeValue: document.querySelector('#volumeValue'),
+  playButton: document.querySelector('#playButton'),
+  pauseButton: document.querySelector('#pauseButton'),
+  stopButton: document.querySelector('#stopButton'),
+  progress: document.querySelector('#progress'),
+  progressText: document.querySelector('#progressText'),
+  status: document.querySelector('#status'),
 };
-
-let elements = {};
-
-function collectElements() {
-  return Object.fromEntries(
-    Object.entries(REQUIRED_SELECTORS).map(([name, selector]) => [name, document.querySelector(selector)]),
-  );
-}
-
-function assertRequiredElements() {
-  const missing = Object.entries(elements)
-    .filter(([, element]) => element === null)
-    .map(([name]) => REQUIRED_SELECTORS[name]);
-
-  if (missing.length > 0) {
-    throw new Error(`Mimi Reader のHTML要素が見つかりません: ${missing.join(', ')}`);
-  }
-}
-
 let voices = [];
 let chunks = [];
 let currentChunkIndex = 0;
@@ -102,14 +83,6 @@ function populateVoices() {
 
   elements.voiceSelect.innerHTML = '';
 
-  if (voices.length === 0) {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = '音声を読み込み中です';
-    elements.voiceSelect.append(option);
-    return;
-  }
-
   for (const voice of voices) {
     const option = document.createElement('option');
     option.value = voice.voiceURI;
@@ -118,9 +91,8 @@ function populateVoices() {
   }
 
   const preferred = elements.voiceSelect.dataset.preferredVoice;
-  const preferredVoice = voices.find((voice) => voice.voiceURI === preferred);
   const japaneseVoice = voices.find((voice) => voice.lang.startsWith('ja'));
-  elements.voiceSelect.value = preferredVoice?.voiceURI || japaneseVoice?.voiceURI || voices[0]?.voiceURI || '';
+  elements.voiceSelect.value = preferred || japaneseVoice?.voiceURI || voices[0]?.voiceURI || '';
 }
 
 function getSelectedVoice() {
@@ -256,8 +228,6 @@ function bindEvents() {
 }
 
 function init() {
-  elements = collectElements();
-  assertRequiredElements();
   loadState();
   updateLabels();
   updateProgress();
@@ -271,8 +241,4 @@ function init() {
   }
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init, { once: true });
-} else {
-  init();
-}
+init();
