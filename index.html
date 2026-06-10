@@ -3,99 +3,38 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Mimi Reader - 耳で読む読書アプリ</title>
-    <meta
-      name="description"
-      content="Kindleやカクヨムなどから自分で用意した本文を、PCのイヤホンで聞くためのブラウザ読み上げアプリ。"
-    />
+    <title>Mimi Reader</title>
     <link rel="stylesheet" href="src/styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <section class="panel source-panel" aria-labelledby="source-title">
-        <div class="panel-heading">
-          <div>
-            <h2 id="source-title">貼り付け入力欄</h2>
-            <p><strong>この画面の最初に入力欄を出しました。</strong> 下の大きな枠をクリックして <kbd>Ctrl</kbd> + <kbd>V</kbd> で貼り付けてください。</p>
-          </div>
-          <label class="file-button">
-            TXT/HTMLを開く
-            <input id="fileInput" type="file" accept=".txt,.html,.htm,text/plain,text/html" />
-          </label>
-        </div>
-        <label class="paste-label" for="textInput">
-          <span class="paste-answer">はい、ここです ↓</span>
-          <span class="paste-title">この下の大きな枠に本文を貼り付ける</span>
-          <span>Kindleアプリやカクヨムの表示画面からコピーできる範囲の本文を貼り付けます。</span>
+    <main class="app">
+      <section class="card" aria-labelledby="title">
+        <p class="eyebrow">Japanese Text to Speech</p>
+        <h1 id="title">Mimi Reader</h1>
+        <p class="lead">本文を貼り付けて、PCの音声出力（イヤホンなど）から読み上げます。</p>
+
+        <label class="field" for="textInput">
+          本文貼り付け欄
+          <textarea id="textInput" placeholder="ここに本文を貼り付けてください" autofocus></textarea>
         </label>
-        <textarea
-          id="textInput"
-          spellcheck="false"
-          aria-describedby="pasteHelp"
-          autofocus
-          placeholder="ここが貼り付け先です。クリックして Ctrl + V で貼り付けます。例：読み上げたい本文をコピー → この入力欄に貼り付け → 「読み上げ」を押す"
-        ></textarea>
-        <p id="pasteHelp" class="paste-help">この枠の中に文字が入れば準備完了です。貼り付け後に「読み上げ」を押すと、PCで選ばれている音声出力（イヤホンなど）から再生されます。</p>
-        <div class="text-tools">
-          <button id="sampleButton" type="button">サンプルを入れる</button>
-          <button id="clearButton" type="button" class="ghost">消去</button>
-          <span id="charCount" aria-live="polite">0文字</span>
-        </div>
-      </section>
 
-      <section class="hero" aria-labelledby="app-title">
-        <p class="eyebrow">Browser Text-to-Speech</p>
-        <h1 id="app-title">Mimi Reader</h1>
-        <p class="lead">
-          Kindle本やカクヨム作品など、あなたが正当に利用できる本文を貼り付けて、PCの既定の音声出力（イヤホン）から聞けます。
-        </p>
-        <div class="notice" role="note">
-          DRM解除やサイトの自動取得は行いません。本文はブラウザ内だけで処理され、サーバーへ送信しません。
+        <div class="meta" aria-live="polite">
+          <span id="charCount">0文字</span>
+          <span id="status">待機中</span>
         </div>
-      </section>
 
-      <section class="panel controls" aria-labelledby="listen-title">
-        <h2 id="listen-title">聞く</h2>
-        <div class="control-grid">
-          <label>
-            音声
-            <select id="voiceSelect"></select>
-          </label>
-          <label>
-            速度 <output id="rateValue">1.0</output>
-            <input id="rate" type="range" min="0.5" max="1.8" step="0.1" value="1" />
-          </label>
-          <label>
-            高さ <output id="pitchValue">1.0</output>
-            <input id="pitch" type="range" min="0.6" max="1.6" step="0.1" value="1" />
-          </label>
-          <label>
-            音量 <output id="volumeValue">100%</output>
-            <input id="volume" type="range" min="0" max="1" step="0.05" value="1" />
-          </label>
-        </div>
-        <div class="playback-row">
-          <button id="playButton" type="button" class="primary">▶ 読み上げ</button>
-          <button id="pauseButton" type="button">一時停止</button>
-          <button id="stopButton" type="button" class="danger">停止</button>
-        </div>
-        <div class="progress-wrap" aria-label="読み上げ進捗">
-          <progress id="progress" max="100" value="0"></progress>
-          <span id="progressText">0 / 0</span>
-        </div>
-        <p id="status" class="status" aria-live="polite">本文を貼り付けると読み上げできます。</p>
-      </section>
+        <label class="field" for="voiceSelect">
+          音声選択
+          <select id="voiceSelect"></select>
+        </label>
 
-      <section class="panel tips" aria-labelledby="tips-title">
-        <h2 id="tips-title">PCイヤホンで聞くには</h2>
-        <ol>
-          <li>Windows/macOS側でイヤホンを既定の出力先にします。</li>
-          <li>このページで「読み上げ」を押します。音はブラウザから出ます。</li>
-          <li>音声が出ない場合は、ブラウザのタブのミュート解除とOS音量を確認してください。</li>
-        </ol>
-        <p class="shortcut">ショートカット: <kbd>Ctrl</kbd> + <kbd>Enter</kbd> で再生/再開、<kbd>Esc</kbd> で停止。</p>
+        <div class="actions">
+          <button id="playButton" type="button">読み上げ</button>
+          <button id="stopButton" type="button" class="secondary">停止</button>
+        </div>
       </section>
     </main>
+
     <script type="module" src="src/app.js"></script>
   </body>
 </html>
