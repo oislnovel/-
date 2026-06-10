@@ -4,7 +4,113 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Mimi Reader</title>
-    <link rel="stylesheet" href="src/styles.css" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, "Yu Gothic", "Meiryo", sans-serif;
+        background: #111827;
+        color: #f9fafb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #111827, #1f2937);
+      }
+
+      button,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      .app {
+        width: min(920px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 2rem 0;
+      }
+
+      .card {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 1.25rem;
+        padding: clamp(1rem, 4vw, 2rem);
+        background: rgba(17, 24, 39, 0.92);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: clamp(2rem, 8vw, 4rem);
+      }
+
+      .lead,
+      .meta {
+        color: #cbd5e1;
+      }
+
+      .field {
+        display: grid;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        font-weight: 700;
+      }
+
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid rgba(125, 211, 252, 0.65);
+        border-radius: 0.85rem;
+        padding: 0.9rem;
+        background: #0f172a;
+        color: #f9fafb;
+      }
+
+      textarea {
+        min-height: 16rem;
+        resize: vertical;
+        line-height: 1.8;
+      }
+
+      textarea:focus,
+      select:focus {
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.18);
+        outline: none;
+      }
+
+      .meta,
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        margin-top: 1rem;
+      }
+
+      #charCount {
+        color: #f9fafb;
+        font-weight: 800;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.85rem 1.2rem;
+        background: #38bdf8;
+        color: #082f49;
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      button.secondary {
+        background: #334155;
+        color: #f9fafb;
+      }
+    </style>
   </head>
   <body>
     <main class="app">
@@ -34,6 +140,117 @@
       </section>
     </main>
 
-    <script src="src/app.js"></script>
+    <script>
+      const elements = {
+        textInput: document.querySelector('#textInput'),
+        charCount: document.querySelector('#charCount'),
+        status: document.querySelector('#status'),
+        voiceSelect: document.querySelector('#voiceSelect'),
+        playButton: document.querySelector('#playButton'),
+        stopButton: document.querySelector('#stopButton'),
+      };
+
+      let voices = [];
+
+      function setStatus(message) {
+        elements.status.textContent = message;
+      }
+
+      function updateCharCount() {
+        elements.charCount.textContent = `${elements.textInput.value.length.toLocaleString('ja-JP')}文字`;
+      }
+
+      function populateVoices() {
+        if (!('speechSynthesis' in window)) {
+          elements.voiceSelect.innerHTML = '<option value="">音声合成に未対応</option>';
+          setStatus('このブラウザは音声合成に対応していません');
+          return;
+        }
+
+        voices = speechSynthesis.getVoices().sort((a, b) => {
+          const aJapanese = a.lang.startsWith('ja') ? 0 : 1;
+          const bJapanese = b.lang.startsWith('ja') ? 0 : 1;
+          return aJapanese - bJapanese || a.name.localeCompare(b.name, 'ja');
+        });
+
+        elements.voiceSelect.innerHTML = '';
+
+        if (voices.length === 0) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = '音声を読み込み中です';
+          elements.voiceSelect.append(option);
+          return;
+        }
+
+        for (const voice of voices) {
+          const option = document.createElement('option');
+          option.value = voice.voiceURI;
+          option.textContent = `${voice.name} (${voice.lang})`;
+          elements.voiceSelect.append(option);
+        }
+
+        const japaneseVoice = voices.find((voice) => voice.lang.startsWith('ja'));
+        elements.voiceSelect.value = japaneseVoice?.voiceURI || voices[0].voiceURI;
+      }
+
+      function selectedVoice() {
+        return voices.find((voice) => voice.voiceURI === elements.voiceSelect.value) || null;
+      }
+
+      function stopReading() {
+        if ('speechSynthesis' in window) {
+          speechSynthesis.cancel();
+        }
+        setStatus('停止しました');
+      }
+
+      function readText() {
+        const text = elements.textInput.value.trim();
+
+        if (!text) {
+          setStatus('本文を貼り付けてください');
+          return;
+        }
+
+        if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+          setStatus('このブラウザは音声合成に対応していません');
+          return;
+        }
+
+        speechSynthesis.cancel();
+        const voice = selectedVoice();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.voice = voice;
+        utterance.lang = voice?.lang || 'ja-JP';
+        utterance.onstart = () => setStatus('読み上げ中');
+        utterance.onend = () => setStatus('読み上げ完了');
+        utterance.onerror = () => setStatus('読み上げでエラーが発生しました');
+        speechSynthesis.speak(utterance);
+      }
+
+      function init() {
+        if (Object.values(elements).some((element) => element === null)) {
+          document.body.textContent = 'Mimi Reader の画面を読み込めませんでした。';
+          return;
+        }
+
+        updateCharCount();
+        populateVoices();
+        elements.textInput.addEventListener('input', updateCharCount);
+        elements.playButton.addEventListener('click', readText);
+        elements.stopButton.addEventListener('click', stopReading);
+
+        if ('speechSynthesis' in window) {
+          if (typeof speechSynthesis.addEventListener === 'function') {
+            speechSynthesis.addEventListener('voiceschanged', populateVoices);
+          } else {
+            speechSynthesis.onvoiceschanged = populateVoices;
+          }
+        }
+      }
+
+      init();
+    </script>
   </body>
 </html>
