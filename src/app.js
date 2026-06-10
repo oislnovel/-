@@ -1,24 +1,29 @@
 const elements = {
   textInput: document.querySelector('#textInput'),
   charCount: document.querySelector('#charCount'),
+  status: document.querySelector('#status'),
   voiceSelect: document.querySelector('#voiceSelect'),
   playButton: document.querySelector('#playButton'),
   stopButton: document.querySelector('#stopButton'),
-  status: document.querySelector('#status'),
 };
 
 let voices = [];
-let currentUtterance = null;
-
-function updateCharCount() {
-  elements.charCount.textContent = `${elements.textInput.value.length.toLocaleString('ja-JP')}文字`;
-}
 
 function setStatus(message) {
   elements.status.textContent = message;
 }
 
+function updateCharCount() {
+  elements.charCount.textContent = `${elements.textInput.value.length.toLocaleString('ja-JP')}文字`;
+}
+
 function populateVoices() {
+  if (!('speechSynthesis' in window)) {
+    elements.voiceSelect.innerHTML = '<option value="">音声合成に未対応</option>';
+    setStatus('このブラウザは音声合成に対応していません');
+    return;
+  }
+
   voices = speechSynthesis.getVoices().sort((a, b) => {
     const aJapanese = a.lang.startsWith('ja') ? 0 : 1;
     const bJapanese = b.lang.startsWith('ja') ? 0 : 1;
@@ -46,15 +51,14 @@ function populateVoices() {
   elements.voiceSelect.value = japaneseVoice?.voiceURI || voices[0].voiceURI;
 }
 
-function getSelectedVoice() {
-  return voices.find((voice) => voice.voiceURI === elements.voiceSelect.value) ?? null;
+function selectedVoice() {
+  return voices.find((voice) => voice.voiceURI === elements.voiceSelect.value) || null;
 }
 
 function stopReading() {
   if ('speechSynthesis' in window) {
     speechSynthesis.cancel();
   }
-  currentUtterance = null;
   setStatus('停止しました');
 }
 
@@ -72,31 +76,24 @@ function readText() {
   }
 
   speechSynthesis.cancel();
-  currentUtterance = new SpeechSynthesisUtterance(text);
-  currentUtterance.lang = getSelectedVoice()?.lang ?? 'ja-JP';
-  currentUtterance.voice = getSelectedVoice();
-  currentUtterance.onstart = () => setStatus('読み上げ中');
-  currentUtterance.onend = () => {
-    currentUtterance = null;
-    setStatus('読み上げ完了');
-  };
-  currentUtterance.onerror = () => setStatus('読み上げでエラーが発生しました');
-
-  speechSynthesis.speak(currentUtterance);
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.voice = selectedVoice();
+  utterance.lang = selectedVoice()?.lang || 'ja-JP';
+  utterance.onstart = () => setStatus('読み上げ中');
+  utterance.onend = () => setStatus('読み上げ完了');
+  utterance.onerror = () => setStatus('読み上げでエラーが発生しました');
+  speechSynthesis.speak(utterance);
 }
 
 function init() {
   updateCharCount();
+  populateVoices();
   elements.textInput.addEventListener('input', updateCharCount);
   elements.playButton.addEventListener('click', readText);
   elements.stopButton.addEventListener('click', stopReading);
 
   if ('speechSynthesis' in window) {
-    populateVoices();
     speechSynthesis.addEventListener('voiceschanged', populateVoices);
-  } else {
-    elements.voiceSelect.innerHTML = '<option>音声合成に未対応</option>';
-    setStatus('このブラウザは音声合成に対応していません');
   }
 }
 

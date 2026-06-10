@@ -8,20 +8,19 @@
   </head>
   <body>
     <main class="app">
-      <section class="card" aria-labelledby="title">
-        <p class="eyebrow">Japanese Text to Speech</p>
-        <h1 id="title">Mimi Reader</h1>
-        <p class="lead">本文を貼り付けて、PCの音声出力（イヤホンなど）から読み上げます。</p>
+      <section class="card" aria-labelledby="appTitle">
+        <h1 id="appTitle">Mimi Reader</h1>
+        <p class="lead">本文を貼り付けて、PCの音声出力から読み上げます。</p>
 
         <label class="field" for="textInput">
           本文貼り付け欄
           <textarea id="textInput" placeholder="ここに本文を貼り付けてください" autofocus></textarea>
         </label>
 
-        <div class="meta" aria-live="polite">
+        <p class="meta" aria-live="polite">
           <span id="charCount">0文字</span>
           <span id="status">待機中</span>
-        </div>
+        </p>
 
         <label class="field" for="voiceSelect">
           音声選択
@@ -35,6 +34,6 @@
       </section>
     </main>
 
-    <script type="module" src="src/app.js"></script>
+    <script src="src/app.js"></script>
   </body>
 </html>
