@@ -3,25 +3,33 @@ import { splitIntoSpeechChunks } from './speech.js';
 const SAMPLE_TEXT = `吾輩は猫である。名前はまだ無い。\n\nこのアプリは、ブラウザの音声合成を使って日本語の文章を読み上げます。PCの音声出力をイヤホンに設定してから再生してください。`;
 const STORAGE_KEY = 'mimi-reader-state-v1';
 
+function queryRequiredElement(selector) {
+  const element = document.querySelector(selector);
+  if (!element) {
+    throw new Error(`Mimi Reader のHTML要素が見つかりません: ${selector}`);
+  }
+  return element;
+}
+
 const elements = {
-  textInput: document.querySelector('#textInput'),
-  fileInput: document.querySelector('#fileInput'),
-  sampleButton: document.querySelector('#sampleButton'),
-  clearButton: document.querySelector('#clearButton'),
-  charCount: document.querySelector('#charCount'),
-  voiceSelect: document.querySelector('#voiceSelect'),
-  rate: document.querySelector('#rate'),
-  pitch: document.querySelector('#pitch'),
-  volume: document.querySelector('#volume'),
-  rateValue: document.querySelector('#rateValue'),
-  pitchValue: document.querySelector('#pitchValue'),
-  volumeValue: document.querySelector('#volumeValue'),
-  playButton: document.querySelector('#playButton'),
-  pauseButton: document.querySelector('#pauseButton'),
-  stopButton: document.querySelector('#stopButton'),
-  progress: document.querySelector('#progress'),
-  progressText: document.querySelector('#progressText'),
-  status: document.querySelector('#status'),
+  textInput: queryRequiredElement('#textInput'),
+  fileInput: queryRequiredElement('#fileInput'),
+  sampleButton: queryRequiredElement('#sampleButton'),
+  clearButton: queryRequiredElement('#clearButton'),
+  charCount: queryRequiredElement('#charCount'),
+  voiceSelect: queryRequiredElement('#voiceSelect'),
+  rate: queryRequiredElement('#rate'),
+  pitch: queryRequiredElement('#pitch'),
+  volume: queryRequiredElement('#volume'),
+  rateValue: queryRequiredElement('#rateValue'),
+  pitchValue: queryRequiredElement('#pitchValue'),
+  volumeValue: queryRequiredElement('#volumeValue'),
+  playButton: queryRequiredElement('#playButton'),
+  pauseButton: queryRequiredElement('#pauseButton'),
+  stopButton: queryRequiredElement('#stopButton'),
+  progress: queryRequiredElement('#progress'),
+  progressText: queryRequiredElement('#progressText'),
+  status: queryRequiredElement('#status'),
 };
 let voices = [];
 let chunks = [];
