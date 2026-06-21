@@ -1,217 +1,118 @@
-import { splitIntoSpeechChunks } from './speech.js';
+(function () {
+  'use strict';
 
-const SAMPLE_TEXT = `吾輩は猫である。名前はまだ無い。\n\nこのアプリは、ブラウザの音声合成を使って日本語の文章を読み上げます。PCの音声出力をイヤホンに設定してから再生してください。`;
-const STORAGE_KEY = 'mimi-reader-state-v1';
-function saveState() {
-  const state = {
-    text: elements.textInput.value,
-    rate: elements.rate.value,
-    pitch: elements.pitch.value,
-    volume: elements.volume.value,
-    voiceURI: elements.voiceSelect.value,
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
+  const textInput = document.getElementById('textInput');
+  const charCount = document.getElementById('charCount');
+  const statusText = document.getElementById('status');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const speakButton = document.getElementById('speakButton');
+  const stopButton = document.getElementById('stopButton');
 
-function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
+  let voices = [];
+  let utterance = null;
 
-  try {
-    const state = JSON.parse(raw);
-    elements.textInput.value = state.text ?? '';
-    elements.rate.value = state.rate ?? '1';
-    elements.pitch.value = state.pitch ?? '1';
-    elements.volume.value = state.volume ?? '1';
-    elements.voiceSelect.dataset.preferredVoice = state.voiceURI ?? '';
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-}
-
-function updateLabels() {
-  elements.charCount.textContent = `${elements.textInput.value.length.toLocaleString('ja-JP')}文字`;
-  elements.rateValue.textContent = Number(elements.rate.value).toFixed(1);
-  elements.pitchValue.textContent = Number(elements.pitch.value).toFixed(1);
-  elements.volumeValue.textContent = `${Math.round(Number(elements.volume.value) * 100)}%`;
-}
-
-function setStatus(message) {
-  elements.status.textContent = message;
-}
-
-function updateProgress() {
-  const total = chunks.length;
-  const current = total === 0 ? 0 : Math.min(currentChunkIndex + 1, total);
-  elements.progress.max = Math.max(total, 1);
-  elements.progress.value = total === 0 ? 0 : current;
-  elements.progressText.textContent = `${current} / ${total}`;
-}
-
-function populateVoices() {
-  voices = speechSynthesis.getVoices().sort((a, b) => {
-    const aJapanese = a.lang.startsWith('ja') ? 0 : 1;
-    const bJapanese = b.lang.startsWith('ja') ? 0 : 1;
-    return aJapanese - bJapanese || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
-  });
-
-  elements.voiceSelect.innerHTML = '';
-  for (const voice of voices) {
-    const option = document.createElement('option');
-    option.value = voice.voiceURI;
-    option.textContent = `${voice.name} (${voice.lang})${voice.default ? ' - 既定' : ''}`;
-    elements.voiceSelect.append(option);
+  function setStatus(message) {
+    statusText.textContent = message;
   }
 
-  const preferred = elements.voiceSelect.dataset.preferredVoice;
-  const japaneseVoice = voices.find((voice) => voice.lang.startsWith('ja'));
-  elements.voiceSelect.value = preferred || japaneseVoice?.voiceURI || voices[0]?.voiceURI || '';
-}
-
-function getSelectedVoice() {
-  return voices.find((voice) => voice.voiceURI === elements.voiceSelect.value) ?? null;
-}
-
-function speakCurrentChunk() {
-  if (currentChunkIndex >= chunks.length) {
-    setStatus('読み上げが完了しました。');
-    updateProgress();
-    return;
+  function updateCharCount() {
+    charCount.textContent = `${textInput.value.length.toLocaleString('ja-JP')}文字`;
   }
 
-  const utterance = new SpeechSynthesisUtterance(chunks[currentChunkIndex]);
-  utterance.lang = getSelectedVoice()?.lang ?? 'ja-JP';
-  utterance.voice = getSelectedVoice();
-  utterance.rate = Number(elements.rate.value);
-  utterance.pitch = Number(elements.pitch.value);
-  utterance.volume = Number(elements.volume.value);
-
-  utterance.onstart = () => {
-    setStatus(`読み上げ中: ${currentChunkIndex + 1} / ${chunks.length}`);
-    updateProgress();
-  };
-  utterance.onend = () => {
-    if (isStoppedManually) return;
-    currentChunkIndex += 1;
-    updateProgress();
-    speakCurrentChunk();
-  };
-  utterance.onerror = (event) => {
-    setStatus(`読み上げエラー: ${event.error}`);
-  };
-
-  speechSynthesis.speak(utterance);
-}
-
-function play() {
-  if (!('speechSynthesis' in window)) {
-    setStatus('このブラウザは音声合成に対応していません。Chrome / Edge / Safari を試してください。');
-    return;
+  function voiceLabel(voice) {
+    const defaultText = voice.default ? ' / 既定' : '';
+    return `${voice.name} (${voice.lang}${defaultText})`;
   }
 
-  if (speechSynthesis.paused) {
-    speechSynthesis.resume();
-    setStatus('読み上げを再開しました。');
-    return;
-  }
+  function populateVoices() {
+    if (!('speechSynthesis' in window)) {
+      voiceSelect.innerHTML = '<option value="">このブラウザは音声合成に未対応です</option>';
+      setStatus('このブラウザは音声合成に対応していません。');
+      return;
+    }
 
-  const text = elements.textInput.value.trim();
-  chunks = splitIntoSpeechChunks(text);
-  currentChunkIndex = 0;
-  isStoppedManually = false;
-  updateProgress();
-
-  if (chunks.length === 0) {
-    setStatus('読み上げる本文を入力してください。');
-    return;
-  }
-
-  speechSynthesis.cancel();
-  saveState();
-  speakCurrentChunk();
-}
-
-function pause() {
-  if (!('speechSynthesis' in window)) return;
-  if (speechSynthesis.speaking && !speechSynthesis.paused) {
-    speechSynthesis.pause();
-    setStatus('一時停止しました。');
-  }
-}
-
-function stop() {
-  isStoppedManually = true;
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
-  currentChunkIndex = 0;
-  updateProgress();
-  setStatus('停止しました。');
-}
-
-function readFile(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    const parser = new DOMParser();
-    const content = String(reader.result ?? '');
-    const text = file.type === 'text/html' || file.name.match(/\.html?$/i)
-      ? parser.parseFromString(content, 'text/html').body.textContent ?? ''
-      : content;
-    elements.textInput.value = text.trim();
-    updateLabels();
-    saveState();
-    setStatus(`${file.name} を読み込みました。`);
-  };
-  reader.onerror = () => setStatus('ファイルを読み込めませんでした。');
-  reader.readAsText(file, 'utf-8');
-}
-
-function bindEvents() {
-  elements.textInput.addEventListener('input', () => {
-    updateLabels();
-    saveState();
-  });
-  elements.fileInput.addEventListener('change', (event) => {
-    const [file] = event.target.files ?? [];
-    if (file) readFile(file);
-  });
-  elements.sampleButton.addEventListener('click', () => {
-    elements.textInput.value = SAMPLE_TEXT;
-    updateLabels();
-    saveState();
-    setStatus('サンプル本文を入力しました。');
-  });
-  elements.clearButton.addEventListener('click', () => {
-    stop();
-    elements.textInput.value = '';
-    updateLabels();
-    saveState();
-  });
-  for (const element of [elements.rate, elements.pitch, elements.volume, elements.voiceSelect]) {
-    element.addEventListener('input', () => {
-      updateLabels();
-      saveState();
+    const selectedValue = voiceSelect.value;
+    voices = window.speechSynthesis.getVoices().slice().sort((a, b) => {
+      const aJa = a.lang.toLowerCase().startsWith('ja') ? 0 : 1;
+      const bJa = b.lang.toLowerCase().startsWith('ja') ? 0 : 1;
+      return aJa - bJa || a.name.localeCompare(b.name, 'ja') || a.lang.localeCompare(b.lang, 'ja');
     });
-  }
-  elements.playButton.addEventListener('click', play);
-  elements.pauseButton.addEventListener('click', pause);
-  elements.stopButton.addEventListener('click', stop);
-  document.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && event.key === 'Enter') play();
-    if (event.key === 'Escape') stop();
-  });
-}
 
-function init() {
-  loadState();
-  updateLabels();
-  updateProgress();
-  bindEvents();
+    voiceSelect.replaceChildren();
+
+    if (voices.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = '音声を読み込み中です';
+      voiceSelect.appendChild(option);
+      return;
+    }
+
+    voices.forEach((voice) => {
+      const option = document.createElement('option');
+      option.value = voice.voiceURI;
+      option.textContent = voiceLabel(voice);
+      voiceSelect.appendChild(option);
+    });
+
+    const ayumi = voices.find((voice) => /ayumi/i.test(voice.name) && voice.lang.toLowerCase().startsWith('ja'));
+    const japanese = voices.find((voice) => voice.lang.toLowerCase().startsWith('ja'));
+    const previous = voices.find((voice) => voice.voiceURI === selectedValue);
+    voiceSelect.value = (previous || ayumi || japanese || voices[0]).voiceURI;
+  }
+
+  function selectedVoice() {
+    return voices.find((voice) => voice.voiceURI === voiceSelect.value) || null;
+  }
+
+  function speak() {
+    if (!('speechSynthesis' in window)) {
+      setStatus('このブラウザは音声合成に対応していません。');
+      return;
+    }
+
+    const text = textInput.value.trim();
+    if (!text) {
+      setStatus('本文を貼り付けてください。');
+      textInput.focus();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    utterance = new SpeechSynthesisUtterance(text);
+    const voice = selectedVoice();
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    } else {
+      utterance.lang = 'ja-JP';
+    }
+
+    utterance.onstart = () => setStatus('読み上げ中です。');
+    utterance.onend = () => setStatus('読み上げが終わりました。');
+    utterance.onerror = (event) => setStatus(`読み上げを停止しました。${event.error ? ` (${event.error})` : ''}`);
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function stop() {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setStatus('停止しました。');
+  }
+
+  textInput.addEventListener('input', updateCharCount);
+  speakButton.addEventListener('click', speak);
+  stopButton.addEventListener('click', stop);
+
+  updateCharCount();
+  populateVoices();
+
   if ('speechSynthesis' in window) {
-    populateVoices();
-    speechSynthesis.addEventListener('voiceschanged', populateVoices);
-  } else {
-    elements.voiceSelect.innerHTML = '<option>音声合成に未対応</option>';
-    setStatus('このブラウザは音声合成に対応していません。Chrome / Edge / Safari を試してください。');
+    window.speechSynthesis.addEventListener('voiceschanged', populateVoices);
+    window.setTimeout(populateVoices, 300);
+    window.setTimeout(populateVoices, 1000);
   }
-}
-
-init();
+}());
